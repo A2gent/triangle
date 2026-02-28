@@ -1,5 +1,5 @@
 import type { SquareTransport } from "./config.js";
-import type { SquareA2AMessage } from "./types.js";
+import type { AgentProfile, SquareA2AMessage } from "./types.js";
 
 interface SquareClientConfig {
   baseUrl: string;
@@ -10,6 +10,7 @@ interface SquareClientConfig {
 export class SquareClient {
   private readonly cfg: SquareClientConfig;
   private cachedAuthenticatedAgentID?: string;
+  private cachedAuthenticatedAgentRaw?: any;
 
   constructor(cfg: SquareClientConfig) {
     this.cfg = cfg;
@@ -20,32 +21,31 @@ export class SquareClient {
   }
 
   async getAuthenticatedAgentID(): Promise<string> {
-    if (this.cachedAuthenticatedAgentID) {
-      return this.cachedAuthenticatedAgentID;
+    const profile = await this.getAuthenticatedAgentProfile();
+    return profile.id;
+  }
+
+  async getAuthenticatedAgentProfile(): Promise<AgentProfile> {
+    if (this.cachedAuthenticatedAgentRaw) {
+      return this.normalizeAgent(this.cachedAuthenticatedAgentRaw);
     }
-    const url = new URL("/agents/me", this.cfg.baseUrl).toString();
-    const resp = await fetch(url, {
-      method: "GET",
-      headers: {
-        "X-API-Key": this.cfg.apiKey
-      }
-    });
-    const bodyText = await resp.text();
-    if (!resp.ok) {
-      throw new Error(`failed to resolve target agent from API key: status ${resp.status}: ${bodyText}`);
-    }
-    let parsed: any;
-    try {
-      parsed = JSON.parse(bodyText);
-    } catch {
-      throw new Error("failed to resolve target agent from API key: invalid /agents/me response");
-    }
-    const id = typeof parsed?.id === "string" ? parsed.id.trim() : "";
+    const parsed = await this.getJSON("/agents/me", "failed to resolve target agent from API key");
+    this.cachedAuthenticatedAgentRaw = parsed;
+    const profile = this.normalizeAgent(parsed);
+    this.cachedAuthenticatedAgentID = profile.id;
+    return profile;
+  }
+
+  async getAgentProfile(agentID: string): Promise<AgentProfile> {
+    const id = agentID.trim();
     if (!id) {
-      throw new Error("failed to resolve target agent from API key: /agents/me returned empty id");
+      throw new Error("agent id is required");
     }
-    this.cachedAuthenticatedAgentID = id;
-    return id;
+    if (this.cachedAuthenticatedAgentID && this.cachedAuthenticatedAgentID === id && this.cachedAuthenticatedAgentRaw) {
+      return this.normalizeAgent(this.cachedAuthenticatedAgentRaw);
+    }
+    const parsed = await this.getJSON(`/agents/${encodeURIComponent(id)}`, `failed to resolve agent ${id}`);
+    return this.normalizeAgent(parsed);
   }
 
   async sendMessage(message: SquareA2AMessage): Promise<any> {
@@ -193,5 +193,76 @@ export class SquareClient {
     } catch {
       return { raw: bodyText };
     }
+  }
+
+  private async getJSON(path: string, context: string): Promise<any> {
+    const url = new URL(path, this.cfg.baseUrl).toString();
+    const resp = await fetch(url, {
+      method: "GET",
+      headers: {
+        "X-API-Key": this.cfg.apiKey
+      }
+    });
+    const bodyText = await resp.text();
+    if (!resp.ok) {
+      throw new Error(`${context}: status ${resp.status}: ${bodyText}`);
+    }
+    let parsed: any;
+    try {
+      parsed = JSON.parse(bodyText);
+    } catch {
+      throw new Error(`${context}: invalid JSON response`);
+    }
+    return parsed;
+  }
+
+  private normalizeAgent(raw: any): AgentProfile {
+    const id = this.readString(raw, [
+      "id",
+      "agent_id",
+      "agentId",
+      "metadata.agent.id"
+    ]);
+    if (!id) {
+      throw new Error("agent response missing id");
+    }
+
+    const name =
+      this.readString(raw, ["name", "display_name", "displayName", "title"]) ||
+      `Agent ${id.slice(0, 8)}`;
+    const avatarUrl = this.readString(raw, [
+      "avatar_url",
+      "avatarUrl",
+      "image_url",
+      "imageUrl",
+      "profile_image_url",
+      "profileImageUrl",
+      "photo_url",
+      "photoUrl"
+    ]);
+
+    return { id, name, avatarUrl: avatarUrl || undefined };
+  }
+
+  private readString(raw: any, paths: string[]): string {
+    for (const path of paths) {
+      const value = this.readPath(raw, path);
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
+    }
+    return "";
+  }
+
+  private readPath(raw: any, path: string): unknown {
+    const parts = path.split(".");
+    let curr = raw;
+    for (const part of parts) {
+      if (!curr || typeof curr !== "object" || !(part in curr)) {
+        return undefined;
+      }
+      curr = curr[part];
+    }
+    return curr;
   }
 }

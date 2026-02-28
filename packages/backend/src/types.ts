@@ -31,6 +31,12 @@ export interface ChatResponse {
   raw?: unknown;
 }
 
+export interface AgentProfile {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+}
+
 export interface SquareA2AContentPart {
   type: "text" | "image_url" | "image_base64";
   text?: string;

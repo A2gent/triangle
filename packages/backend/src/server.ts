@@ -46,7 +46,22 @@ async function resolveRecipientAgentId(input: ChatMessageInput): Promise<string>
   const configuredOrRequested = requested || configured;
 
   if (config.useApiKeyTarget) {
-    const keyTargetAgentId = (await squareClient.getAuthenticatedAgentID()).trim();
+    let keyTargetAgentId = "";
+    try {
+      keyTargetAgentId = (await squareClient.getAuthenticatedAgentID()).trim();
+    } catch (err) {
+      if (configuredOrRequested) {
+        app.log.warn(
+          {
+            err,
+            configuredOrRequested
+          },
+          "failed to resolve target from API key, falling back to configured/requested recipient"
+        );
+        return configuredOrRequested;
+      }
+      throw err;
+    }
     if (!keyTargetAgentId) {
       throw new Error("could not resolve target agent from API key");
     }
@@ -99,6 +114,29 @@ async function handleInboundMessage(input: ChatMessageInput) {
 }
 
 app.get("/health", async () => ({ status: "ok" }));
+
+app.get("/v1/chat/agent", async (request, reply) => {
+  const query = request.query as { recipientAgentId?: string };
+  const requested = (query?.recipientAgentId ?? "").trim();
+  try {
+    if (!requested) {
+      const profile = await squareClient.getAuthenticatedAgentProfile();
+      return reply.send(profile);
+    }
+
+    try {
+      const profile = await squareClient.getAgentProfile(requested);
+      return reply.send(profile);
+    } catch (err) {
+      request.log.warn({ err, requested }, "requested agent lookup failed, falling back to authenticated agent");
+      const fallback = await squareClient.getAuthenticatedAgentProfile();
+      return reply.send(fallback);
+    }
+  } catch (err) {
+    request.log.error({ err, requested }, "agent metadata lookup failed");
+    return reply.code(502).send({ error: (err as Error).message });
+  }
+});
 
 app.post("/v1/chat/message", async (request, reply) => {
   const parsed = chatMessageSchema.safeParse(request.body);
