@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Triangle Plain Widget Example</title>
+  </head>
+  <body style="margin:0;padding:24px;background:#f4f4f5;">
+    <div id="triangle-root"></div>
+    <script type="module">
+      import { createTriangleWidget } from "../../packages/embed-js/dist/index.js";
+
+      createTriangleWidget({
+        baseUrl: "http://localhost:9080",
+        recipientAgentId: "replace-with-target-agent-uuid",
+        mount: document.getElementById("triangle-root"),
+        title: "Support Agent"
+      });
+    </script>
+  </body>
+</html>

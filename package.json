@@ -1,0 +1,16 @@
+{
+  "name": "triangle",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm --workspace @triangle/sdk-core run build && npm --workspace @triangle/backend run build && npm --workspace @triangle/embed-js run build && npm --workspace @triangle/embed-react run build",
+    "typecheck": "npm --workspace @triangle/sdk-core run typecheck && npm --workspace @triangle/backend run typecheck && npm --workspace @triangle/embed-js run typecheck && npm --workspace @triangle/embed-react run typecheck",
+    "dev:backend": "npm --workspace @triangle/backend run dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
