@@ -46,6 +46,12 @@ set -a; source .env; set +a
 npm run dev:backend
 ```
 
+### Square base URL
+
+- Local development Square: `TRIANGLE_SQUARE_BASE_URL=http://localhost:9000`
+- Production Square behind nginx/TLS: `TRIANGLE_SQUARE_BASE_URL=https://a2gent.net`
+- Do not use external `http://<host>:9000` for production traffic.
+
 ### API key targeting behavior
 
 - `sqi_...` integration key:

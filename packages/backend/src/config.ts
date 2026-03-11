@@ -5,10 +5,39 @@ const required = (name: string, value: string | undefined): string => {
   return value.trim();
 };
 
+const loopbackHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+
+const normalizeSquareBaseUrl = (raw: string): string => {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error(`Invalid TRIANGLE_SQUARE_BASE_URL: expected absolute URL, got "${raw}"`);
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(
+      `Invalid TRIANGLE_SQUARE_BASE_URL: only http/https are supported, got "${parsed.protocol}"`
+    );
+  }
+
+  const isLoopback = loopbackHosts.has(parsed.hostname.toLowerCase());
+  if (!isLoopback && parsed.protocol === "http:" && parsed.port === "9000") {
+    throw new Error(
+      `Invalid TRIANGLE_SQUARE_BASE_URL: "${raw}" points to external host on :9000. ` +
+        `Use the public HTTPS endpoint instead (for example: "https://${parsed.hostname}").`
+    );
+  }
+
+  return parsed.toString().replace(/\/$/, "");
+};
+
 export const config = {
   port: Number(process.env.PORT ?? 9080),
   host: process.env.HOST?.trim() || "0.0.0.0",
-  squareBaseUrl: required("TRIANGLE_SQUARE_BASE_URL", process.env.TRIANGLE_SQUARE_BASE_URL),
+  squareBaseUrl: normalizeSquareBaseUrl(
+    required("TRIANGLE_SQUARE_BASE_URL", process.env.TRIANGLE_SQUARE_BASE_URL)
+  ),
   squareApiKey: required("TRIANGLE_SQUARE_API_KEY", process.env.TRIANGLE_SQUARE_API_KEY),
   useApiKeyTarget: process.env.TRIANGLE_USE_API_KEY_TARGET?.trim().toLowerCase() !== "false",
   defaultRecipientAgentId: process.env.TRIANGLE_DEFAULT_RECIPIENT_AGENT_ID?.trim() || "",
