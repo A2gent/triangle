@@ -1,0 +1,10 @@
+services:
+  triangle-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "9080:9080"
+    restart: unless-stopped

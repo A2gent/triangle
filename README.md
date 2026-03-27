@@ -46,6 +46,17 @@ set -a; source .env; set +a
 npm run dev:backend
 ```
 
+## Run with Docker
+
+```bash
+cd /Users/artjom/git/a2gent/triangle
+cp .env.example .env
+# update TRIANGLE_SQUARE_* values in .env
+docker compose up --build
+```
+
+Backend will be available at `http://localhost:9080`.
+
 ### Square base URL
 
 - Local development Square: `TRIANGLE_SQUARE_BASE_URL=http://localhost:9000`
