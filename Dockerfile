@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM node:22-alpine AS builder
+FROM platformatic/node-caged:25-slim AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json tsconfig.base.json ./
@@ -11,7 +11,7 @@ RUN npm ci
 COPY packages/backend ./packages/backend
 RUN npm --workspace @triangle/backend run build
 
-FROM node:22-alpine AS runner
+FROM platformatic/node-caged:25-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
