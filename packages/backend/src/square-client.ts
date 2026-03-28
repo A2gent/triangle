@@ -70,7 +70,7 @@ export class SquareClient {
 
   private async sendA2AHttp(message: SquareA2AMessage): Promise<any> {
     const res = await this.post("/a2a/messages/send", message);
-    return res;
+    return this.assertA2ASuccess(res, "a2a_http");
   }
 
   private async sendProxyHttp(message: SquareA2AMessage): Promise<any> {
@@ -89,6 +89,7 @@ export class SquareClient {
         message: res.response
       };
     }
+    this.assertProxySuccess(res);
     return res;
   }
 
@@ -162,12 +163,36 @@ export class SquareClient {
     }
 
     if (finalMessage) {
-      return finalMessage;
+      return this.assertA2ASuccess(finalMessage, "a2a_stream");
     }
     if (finalError) {
       throw new Error(finalError);
     }
     throw new Error("stream ended without final message event");
+  }
+
+  private assertA2ASuccess(response: any, transport: "a2a_http" | "a2a_stream"): any {
+    const statusState = String(response?.status?.state ?? "")
+      .trim()
+      .toLowerCase();
+    const statusCode = String(response?.status?.code ?? "").trim();
+    const error = typeof response?.error === "string" ? response.error.trim() : "";
+    if (statusState === "failed" || statusState === "error" || error) {
+      const reason = error || statusCode || statusState || "unknown error";
+      throw new Error(`square ${transport} failed: ${reason}`);
+    }
+    return response;
+  }
+
+  private assertProxySuccess(response: any): void {
+    const status = String(response?.status ?? "")
+      .trim()
+      .toLowerCase();
+    const error = typeof response?.error === "string" ? response.error.trim() : "";
+    if ((status && status !== "completed") || error) {
+      const reason = error || status || "unknown error";
+      throw new Error(`square proxy_http failed: ${reason}`);
+    }
   }
 
   private async post(path: string, payload: unknown): Promise<any> {
