@@ -72,7 +72,7 @@ export function TriangleChat(props: TriangleChatProps) {
         {
           id: crypto.randomUUID(),
           role: "system",
-          text: `Error: ${(err as Error).message}`,
+          text: (err as Error).message,
           createdAt: new Date().toISOString()
         }
       ]);
@@ -85,32 +85,51 @@ export function TriangleChat(props: TriangleChatProps) {
     <div style={{ border: "1px solid #d4d4d8", borderRadius: 12, overflow: "hidden", background: "#fff", maxWidth: 520 }}>
       <div style={{ padding: "10px 12px", background: "#0f172a", color: "#fff", fontWeight: 600 }}>{props.title ?? "Triangle Chat"}</div>
       <div style={{ padding: 12, height: 360, overflowY: "auto", background: "#fafafa" }}>
-        {messages.map((m) => (
-          <div key={m.id} style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 12, color: "#52525b", marginBottom: 2 }}>{m.role}</div>
-            <div style={{ background: "#fff", border: "1px solid #e4e4e7", borderRadius: 8, padding: 8, whiteSpace: "pre-wrap" }}>{m.text}</div>
-            {!!m.attachments?.length && (
-              <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
-                {m.attachments.map((a, i) =>
-                  a.type === "image" ? (
-                    <img
-                      key={i}
-                      src={a.url ?? `data:${a.mediaType ?? "image/png"};base64,${a.dataBase64 ?? ""}`}
-                      alt={a.name ?? "image"}
-                      style={{ maxWidth: 260, borderRadius: 8 }}
-                    />
-                  ) : (
-                    <audio
-                      key={i}
-                      controls
-                      src={a.url ?? `data:${a.mediaType ?? "audio/mpeg"};base64,${a.dataBase64 ?? ""}`}
-                    />
-                  )
+        {messages.map((m) => {
+          const isUser = m.role === "user";
+          const isSystem = m.role === "system";
+          const roleLabel = isUser ? "You" : isSystem ? "System" : "Assistant";
+
+          return (
+            <div key={m.id} style={{ marginBottom: 10, display: "flex", justifyContent: isUser ? "flex-end" : "flex-start" }}>
+              <div style={{ maxWidth: "80%", display: "grid", gap: 4 }}>
+                <div style={{ fontSize: 12, color: isSystem ? "#9f1239" : "#52525b", marginBottom: 2, textAlign: isUser ? "right" : "left" }}>{roleLabel}</div>
+                <div
+                  style={{
+                    background: isUser ? "#2563eb" : isSystem ? "#fff1f2" : "#fff",
+                    color: isUser ? "#fff" : isSystem ? "#9f1239" : "#0f172a",
+                    border: isUser ? "none" : isSystem ? "1px solid #fecdd3" : "1px solid #e4e4e7",
+                    borderRadius: 8,
+                    padding: 8,
+                    whiteSpace: "pre-wrap"
+                  }}
+                >
+                  {m.text}
+                </div>
+                {!!m.attachments?.length && (
+                  <div style={{ display: "grid", gap: 6, marginTop: 6 }}>
+                    {m.attachments.map((a, i) =>
+                      a.type === "image" ? (
+                        <img
+                          key={i}
+                          src={a.url ?? `data:${a.mediaType ?? "image/png"};base64,${a.dataBase64 ?? ""}`}
+                          alt={a.name ?? "image"}
+                          style={{ maxWidth: 260, borderRadius: 8 }}
+                        />
+                      ) : (
+                        <audio
+                          key={i}
+                          controls
+                          src={a.url ?? `data:${a.mediaType ?? "audio/mpeg"};base64,${a.dataBase64 ?? ""}`}
+                        />
+                      )
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
       <div style={{ display: "grid", gap: 8, padding: 10, borderTop: "1px solid #e4e4e7" }}>
         <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." />

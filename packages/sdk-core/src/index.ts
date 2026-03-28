@@ -62,8 +62,7 @@ export class TriangleClient {
       body: JSON.stringify(payload)
     });
     if (!resp.ok) {
-      const body = await resp.text();
-      throw new Error(`HTTP ${resp.status}: ${body}`);
+      throw new Error(await this.formatHttpError(resp));
     }
     return (await resp.json()) as TriangleSendResult;
   }
@@ -124,7 +123,7 @@ export class TriangleClient {
         clearTimeout(pending.timeout);
         this.pending.delete(parsed.requestId);
         if (parsed.error) {
-          pending.reject(new Error(String(parsed.error)));
+          pending.reject(new Error(this.normalizeErrorMessage(String(parsed.error))));
           return;
         }
         pending.resolve(parsed.payload as TriangleSendResult);
@@ -145,5 +144,49 @@ export class TriangleClient {
     const url = new URL(path, baseUrl);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
     return url.toString();
+  }
+
+  private async formatHttpError(resp: Response): Promise<string> {
+    const rawBody = (await resp.text()).trim();
+    let serverError = rawBody;
+    if (rawBody) {
+      try {
+        const parsed = JSON.parse(rawBody) as { error?: unknown };
+        if (typeof parsed?.error === "string" && parsed.error.trim()) {
+          serverError = parsed.error.trim();
+        }
+      } catch {
+        // Keep rawBody as-is if not JSON.
+      }
+    }
+    const normalized = this.normalizeErrorMessage(serverError);
+    if (normalized !== serverError) {
+      return normalized;
+    }
+    return `Request failed (HTTP ${resp.status})`;
+  }
+
+  private normalizeErrorMessage(raw: string): string {
+    const message = raw.trim();
+    if (!message) {
+      return "Request failed. Please try again.";
+    }
+    const lower = message.toLowerCase();
+    if (lower.includes("insufficient funds")) {
+      return "Insufficient funds on Square account. Top up balance and try again.";
+    }
+    if (lower.includes("rate limit")) {
+      return "Rate limit reached. Please retry in a moment.";
+    }
+    if (lower.includes("timed out") || lower.includes("timeout")) {
+      return "Request timed out. Please try again.";
+    }
+    if (lower.startsWith("all transports failed:")) {
+      return "Unable to reach remote agent right now. Please try again shortly.";
+    }
+    if (lower.startsWith("http 502:")) {
+      return "Gateway error while contacting remote agent. Please try again.";
+    }
+    return message;
   }
 }

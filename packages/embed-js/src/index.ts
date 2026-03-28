@@ -106,6 +106,7 @@ export function createTriangleWidget(cfg: TriangleWidgetConfig) {
 
   const appendMessage = (role: string, text: string, attachments?: TriangleAttachment[]) => {
     const isUser = role === "You";
+    const isSystem = role === "System";
     const container = document.createElement("div");
     container.style.marginBottom = "10px";
     container.style.display = "flex";
@@ -118,7 +119,7 @@ export function createTriangleWidget(cfg: TriangleWidgetConfig) {
 
     const roleLabel = document.createElement("div");
     roleLabel.style.fontSize = "12px";
-    roleLabel.style.color = "#52525b";
+    roleLabel.style.color = isSystem ? "#9f1239" : "#52525b";
     roleLabel.style.textAlign = isUser ? "right" : "left";
     roleLabel.textContent = role;
 
@@ -127,9 +128,9 @@ export function createTriangleWidget(cfg: TriangleWidgetConfig) {
     bubble.style.padding = "9px 11px";
     bubble.style.whiteSpace = "pre-wrap";
     bubble.style.textAlign = isUser ? "right" : "left";
-    bubble.style.background = isUser ? "#2563eb" : "#ffffff";
-    bubble.style.color = isUser ? "#ffffff" : "#0f172a";
-    bubble.style.border = isUser ? "none" : "1px solid #e4e4e7";
+    bubble.style.background = isUser ? "#2563eb" : isSystem ? "#fff1f2" : "#ffffff";
+    bubble.style.color = isUser ? "#ffffff" : isSystem ? "#9f1239" : "#0f172a";
+    bubble.style.border = isUser ? "none" : isSystem ? "1px solid #fecdd3" : "1px solid #e4e4e7";
     bubble.textContent = text || "";
 
     frame.appendChild(roleLabel);
@@ -289,7 +290,7 @@ export function createTriangleWidget(cfg: TriangleWidgetConfig) {
       updateFileMeta();
     } catch (err) {
       hidePendingAssistant();
-      appendMessage("System", `Error: ${(err as Error).message}`);
+      appendMessage("System", (err as Error).message);
     } finally {
       setBusy(false);
     }
