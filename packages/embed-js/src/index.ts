@@ -1,5 +1,7 @@
 import { TriangleClient, type TriangleAttachment } from "@triangle/sdk-core";
 
+const DEFAULT_LOGO_URL = "https://a2gent.net/a2gent.jpg";
+
 export interface TriangleWidgetConfig {
   baseUrl: string;
   recipientAgentId: string;
@@ -51,7 +53,7 @@ export function createTriangleWidget(cfg: TriangleWidgetConfig) {
   cfg.mount.innerHTML = `
     <div style="font-family: ui-sans-serif, system-ui; width: 100%; border: 1px solid #d4d4d8; border-radius: 14px; overflow: hidden; background: #fff;">
       <div style="padding: 10px 14px; background: #111827; color: #fff; display:flex; align-items:center; gap:10px;">
-        <img data-role="agent-avatar" alt="Agent avatar" style="display:none;width:30px;height:30px;border-radius:50%;object-fit:cover;background:#1f2937;border:1px solid rgba(255,255,255,0.15);" />
+        <img data-role="agent-avatar" alt="Triangle logo" src="${escapeHtml(DEFAULT_LOGO_URL)}" style="display:block;width:30px;height:30px;border-radius:50%;object-fit:cover;background:#1f2937;border:1px solid rgba(255,255,255,0.15);" />
         <div data-role="agent-title" style="font-weight:700;line-height:1.1;">${escapeHtml(cfg.title ?? "Chat with agent")}</div>
       </div>
       <div data-role="messages" style="display:none; max-height:320px; overflow:hidden; padding:0; background:transparent;"></div>
@@ -230,11 +232,10 @@ export function createTriangleWidget(cfg: TriangleWidgetConfig) {
     }
     if (meta.avatarUrl?.trim()) {
       agentAvatar.src = meta.avatarUrl.trim();
-      agentAvatar.style.display = "block";
     } else {
-      agentAvatar.removeAttribute("src");
-      agentAvatar.style.display = "none";
+      agentAvatar.src = DEFAULT_LOGO_URL;
     }
+    agentAvatar.style.display = "block";
   };
 
   const loadAgentMeta = async () => {

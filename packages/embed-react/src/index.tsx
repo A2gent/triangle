@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { TriangleClient, type TriangleAttachment, type TriangleMessage } from "@triangle/sdk-core";
 
+const DEFAULT_LOGO_URL = "https://a2gent.net/a2gent.jpg";
+
 export interface TriangleChatProps {
   baseUrl: string;
   recipientAgentId: string;
@@ -83,7 +85,14 @@ export function TriangleChat(props: TriangleChatProps) {
 
   return (
     <div style={{ border: "1px solid #d4d4d8", borderRadius: 12, overflow: "hidden", background: "#fff", maxWidth: 520 }}>
-      <div style={{ padding: "10px 12px", background: "#0f172a", color: "#fff", fontWeight: 600 }}>{props.title ?? "Triangle Chat"}</div>
+      <div style={{ padding: "10px 12px", background: "#0f172a", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", gap: 10 }}>
+        <img
+          src={DEFAULT_LOGO_URL}
+          alt="Triangle logo"
+          style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", border: "1px solid rgba(255,255,255,0.15)" }}
+        />
+        <div>{props.title ?? "Triangle Chat"}</div>
+      </div>
       <div style={{ padding: 12, height: 360, overflowY: "auto", background: "#fafafa" }}>
         {messages.map((m) => {
           const isUser = m.role === "user";
