@@ -6,13 +6,13 @@ Triangle is an embeddable chat service for websites that proxies conversations t
 
 - Backend (`@triangle/backend`)
 - Accepts frontend chat over HTTP (`POST /v1/chat/message`) and WebSocket (`GET /v1/chat/ws`).
-- Proxies to Square using API key with transport fallback order:
+- Proxies to Matrix using API key with transport fallback order:
   - `a2a_stream` (`/a2a/messages/send/stream`)
   - `a2a_http` (`/a2a/messages/send`)
   - `proxy_http` (`/proxy/request`)
 - Supports multiple image and audio attachments from frontend.
-- Converts messages into canonical A2A `content[]` for Square/Brute compatibility.
-- Resolves target agent from Square API key via `GET /agents/me` (especially for `sqi_...` integration keys bound to one target agent).
+- Converts messages into canonical A2A `content[]` for Matrix/Brute compatibility.
+- Resolves target agent from Matrix API key via `GET /agents/me` (especially for `sqi_...` integration keys bound to one target agent).
 
 - Frontend SDK (`@triangle/sdk-core`)
 - Browser client with WS-first and HTTP fallback.
@@ -34,7 +34,7 @@ Triangle behavior for audio right now:
 
 - Audio attachments are accepted from frontend.
 - Audio is preserved under `metadata.triangle.media.audio` for forward compatibility.
-- Canonical `content[]` remains valid (`text`/`image_*`) so Square accepts the request.
+- Canonical `content[]` remains valid (`text`/`image_*`) so Matrix accepts the request.
 
 ## Run backend
 
@@ -57,10 +57,10 @@ docker compose up --build
 
 Backend will be available at `http://localhost:9080`.
 
-### Square base URL
+### Matrix base URL
 
-- Local development Square: `TRIANGLE_SQUARE_BASE_URL=http://localhost:9000`
-- Production Square behind nginx/TLS: `TRIANGLE_SQUARE_BASE_URL=https://a2gent.net`
+- Local development Matrix: `TRIANGLE_SQUARE_BASE_URL=http://localhost:9000`
+- Production Matrix behind nginx/TLS: `TRIANGLE_SQUARE_BASE_URL=https://a2gent.net`
 - Do not use external `http://<host>:9000` for production traffic.
 
 ### API key targeting behavior

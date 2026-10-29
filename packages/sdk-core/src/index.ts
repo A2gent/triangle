@@ -173,7 +173,7 @@ export class TriangleClient {
     }
     const lower = message.toLowerCase();
     if (lower.includes("insufficient funds")) {
-      return "Insufficient funds on Square account. Top up balance and try again.";
+      return "Insufficient funds on Matrix account. Top up balance and try again.";
     }
     if (lower.includes("rate limit")) {
       return "Rate limit reached. Please retry in a moment.";
